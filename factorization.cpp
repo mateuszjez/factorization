@@ -111,6 +111,12 @@ void Factorization::factors(unsigned long long num){
     for(unsigned i = 0;i<list_of_factors.size();i++)
         std::cout<<"\n\t[ "<<list_of_factors[i]<<" ]";
 }
+void Factorization::factors_x(unsigned long long num){
+    list_of_factors = find_factors_x(num);
+    std::cout<<"\nX: List_of_factors of "<<num<<" :";
+    for(unsigned i = 0;i<list_of_factors.size();i++)
+        std::cout<<"\n\t[ "<<list_of_factors[i]<<" ]";
+}
 std::vector<unsigned long long> Factorization::find_factors(unsigned long long num){
     unsigned long long limit = (unsigned long long)sqrt((long double)num);
     unsigned long long index = 0;
@@ -141,4 +147,54 @@ std::vector<unsigned long long> Factorization::find_factors(unsigned long long n
     }
     list_to_return.push_back(num);
     return list_to_return;
+}
+
+std::vector<unsigned long long> Factorization::find_factors_x(unsigned long long num){
+    std::vector<unsigned long long> list_to_return(1,1);
+    unsigned long long factor = 1;
+    while(factor!=num){
+        num = num/factor;
+        factor = find_next_factor(num);
+        list_to_return.push_back(factor);
+    }
+    return list_to_return;
+}
+
+void threadfunct(unsigned long long *base_list,unsigned long long startIt,unsigned long long endIt,unsigned long long *returnVal, bool *continuethread\
+                                ,unsigned long long *num,unsigned long long *loc_add_factor){
+    for(unsigned long long j = startIt; j<endIt;j++)
+        if(*continuethread && (*num%(base_list[j] + *loc_add_factor)==0))
+            if((base_list[j] + *loc_add_factor)>1){
+                *returnVal = base_list[j] + *loc_add_factor;
+                *continuethread = false;
+                return;
+            }
+    return;
+}
+unsigned long long Factorization::find_next_factor(unsigned long long num){
+    unsigned long long limit = (unsigned long long)sqrt((long double)num);
+    unsigned long long index = 0;
+    while(true){
+        if(num%simple_prime_list[index])
+            if(index<simple_primes_number_index) index++;
+            else break;
+        else return simple_prime_list[index];
+    }
+    unsigned long long Nloops = 1 + limit/max_add_factor;
+    unsigned long long loc_add_factor = 0;
+    unsigned long long half_size_base = size_base/2;
+    unsigned long long returnA = 0, returnB = 0;
+    bool continuethread = true;
+    for(unsigned long long i = 0; i<Nloops;i++){
+        loc_add_factor = max_add_factor*i;
+        std::thread thA = std::thread(threadfunct, base_list, 0, half_size_base, &returnA, &continuethread,&num,&loc_add_factor);
+        std::thread thB = std::thread(threadfunct, base_list, half_size_base, size_base, &returnB, &continuethread,&num,&loc_add_factor);
+        thA.join();
+        thB.join();
+        if(!continuethread){
+            if(returnA) return returnA;
+            else if(returnB) return returnB;
+        }
+    }
+    return num;
 }
