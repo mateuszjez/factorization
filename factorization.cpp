@@ -111,45 +111,7 @@ void Factorization::factors(unsigned long long num){
     for(unsigned i = 0;i<list_of_factors.size();i++)
         std::cout<<"\n\t[ "<<list_of_factors[i]<<" ]";
 }
-void Factorization::factors_x(unsigned long long num){
-    list_of_factors = find_factors_x(num);
-    std::cout<<"\nX: List_of_factors of "<<num<<" :";
-    for(unsigned i = 0;i<list_of_factors.size();i++)
-        std::cout<<"\n\t[ "<<list_of_factors[i]<<" ]";
-}
 std::vector<unsigned long long> Factorization::find_factors(unsigned long long num){
-    unsigned long long limit = (unsigned long long)sqrt((long double)num);
-    unsigned long long index = 0;
-    std::vector<unsigned long long> list_to_return;
-    while(true){
-        if(num%simple_prime_list[index])
-            if(index<simple_primes_number_index)
-                index++;
-            else break;
-        else {
-            list_to_return = find_factors(num/simple_prime_list[index]);
-            list_to_return.push_back(simple_prime_list[index]);
-            return list_to_return;
-        }
-    }
-    unsigned long long Nloops = 1 + limit/max_add_factor;
-    unsigned long long loc_add_factor = 0;
-    for(unsigned long long i = 0; i<Nloops;i++){
-        loc_add_factor = max_add_factor*i;
-        for(unsigned long long j = 0; j<size_base;j++)
-            if(num%(base_list[j]+loc_add_factor)==0){
-                if((base_list[j]+loc_add_factor)>1){
-                    list_to_return = find_factors(num/(base_list[j]+loc_add_factor));
-                    list_to_return.push_back(base_list[j]+loc_add_factor);
-                    return list_to_return;
-                }
-            }
-    }
-    list_to_return.push_back(num);
-    return list_to_return;
-}
-
-std::vector<unsigned long long> Factorization::find_factors_x(unsigned long long num){
     std::vector<unsigned long long> list_to_return(1,1);
     unsigned long long factor = 1;
     while(factor!=num){
@@ -159,17 +121,27 @@ std::vector<unsigned long long> Factorization::find_factors_x(unsigned long long
     }
     return list_to_return;
 }
+void threadfunct(unsigned long long *base_list\
+                    ,unsigned long long num\
+                    ,unsigned long long Nloops\
+                    ,unsigned long long startIt\
+                    ,unsigned long long endIt\
+                    ,unsigned long long *returnVal\
+                    ,bool *continuethread\
+                    ,unsigned long long max_add_factor){
+    unsigned long long loc_add_factor = 0;
 
-void threadfunct(unsigned long long *base_list,unsigned long long startIt,unsigned long long endIt,unsigned long long *returnVal, bool *continuethread\
-                                ,unsigned long long *num,unsigned long long *loc_add_factor){
-    for(unsigned long long j = startIt; j<endIt;j++)
-        if(*continuethread && (*num%(base_list[j] + *loc_add_factor)==0))
-            if((base_list[j] + *loc_add_factor)>1){
-                *returnVal = base_list[j] + *loc_add_factor;
-                *continuethread = false;
-                return;
-            }
-    return;
+    for(unsigned long long i = 0; i<Nloops;i++){
+        loc_add_factor = max_add_factor*i;
+        for(unsigned long long j = startIt; j<endIt;j++)
+            if(*continuethread && (num%(base_list[j] + loc_add_factor)==0))
+                if((base_list[j] + loc_add_factor)>1){
+                    *returnVal = base_list[j] + loc_add_factor;
+                    *continuethread = false;
+                    return;
+                }
+        if(*continuethread==false || *returnVal) break;
+    }
 }
 unsigned long long Factorization::find_next_factor(unsigned long long num){
     unsigned long long limit = (unsigned long long)sqrt((long double)num);
@@ -181,20 +153,18 @@ unsigned long long Factorization::find_next_factor(unsigned long long num){
         else return simple_prime_list[index];
     }
     unsigned long long Nloops = 1 + limit/max_add_factor;
-    unsigned long long loc_add_factor = 0;
     unsigned long long half_size_base = size_base/2;
-    unsigned long long returnA = 0, returnB = 0;
+    unsigned long long returnX1 = 0, returnX2 = 0;
     bool continuethread = true;
-    for(unsigned long long i = 0; i<Nloops;i++){
-        loc_add_factor = max_add_factor*i;
-        std::thread thA = std::thread(threadfunct, base_list, 0, half_size_base, &returnA, &continuethread,&num,&loc_add_factor);
-        std::thread thB = std::thread(threadfunct, base_list, half_size_base, size_base, &returnB, &continuethread,&num,&loc_add_factor);
-        thA.join();
-        thB.join();
-        if(!continuethread){
-            if(returnA) return returnA;
-            else if(returnB) return returnB;
-        }
+    std::thread thX1 = std::thread(threadfunct, base_list, num, Nloops, 0, half_size_base\
+                                   , &returnX1, &continuethread, max_add_factor);
+    std::thread thX2 = std::thread(threadfunct, base_list, num, Nloops, half_size_base, size_base\
+                                   , &returnX2, &continuethread, max_add_factor);
+    thX1.join();
+    thX2.join();
+    if(!continuethread){
+        if(returnX1) return returnX1;
+        else if(returnX2) return returnX2;
     }
     return num;
 }
