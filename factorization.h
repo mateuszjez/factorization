@@ -34,9 +34,7 @@ public:
     unsigned long long get_size_base();
     void print_base();
     void factors(unsigned long long num);
-    void factors_x(unsigned long long num);
     std::vector<unsigned long long>  find_factors(unsigned long long num);
-    std::vector<unsigned long long>  find_factors_x(unsigned long long num);
     unsigned long long              find_next_factor(unsigned long long num);
     std::vector<unsigned long long>  list_of_factors;
 private:
