@@ -22,6 +22,19 @@ public:
             base_list[i] = LONG_LONG_MAX;
         }
         set_primes_list();
+        ///dynamic assignment of threads:
+        number_of_cores = std::thread::hardware_concurrency();
+        thX = new std::thread*[number_of_cores];
+        returnX = new uslong[number_of_cores];
+        for(unsigned int i=0; i<number_of_cores; ++i)
+            returnX[i] = 0;
+        base_parts_bounds = new uslong[number_of_cores+1];
+        base_parts_bounds[0] = 0;
+        for(unsigned int i=1; i<=number_of_cores; ++i)
+        {
+            base_parts_bounds[i] = base_parts_bounds[i-1] + size_base/number_of_cores;
+        }
+        base_parts_bounds[number_of_cores] = size_base;
     }
     ~Factorization() {
         delete temp_base_list;
@@ -29,7 +42,7 @@ public:
         delete primes_list;
     }
     void print_primes();
-    void get_last_prime();
+    unsigned long long get_last_prime();
     unsigned long long get_size_primes();
     unsigned long long get_size_base();
     void print_base();
@@ -53,6 +66,10 @@ private:
     unsigned long long size_base = 0;
     unsigned long long temp_size_base = 0;
     unsigned long long max_add_factor;
+    unsigned int number_of_cores;
+    std::thread ** thX;
+    unsigned long long * returnX;
+    unsigned long long * base_parts_bounds;
 };
 
 #endif // FACTORIZATION_H
