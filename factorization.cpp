@@ -152,7 +152,7 @@ unsigned long long Factorization::find_next_factor(unsigned long long num){
             else break;
         else return simple_prime_list[index];
     }
-    uslong Nloops = 1 + limit/max_add_factor;
+    unsigned long long Nloops = 1 + limit/max_add_factor;
 
     bool continuethread = true;
     for(unsigned int i=0; i<number_of_cores; ++i)
