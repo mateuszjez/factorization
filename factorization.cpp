@@ -152,19 +152,19 @@ unsigned long long Factorization::find_next_factor(unsigned long long num){
             else break;
         else return simple_prime_list[index];
     }
-    unsigned long long Nloops = 1 + limit/max_add_factor;
-    unsigned long long half_size_base = size_base/2;
-    unsigned long long returnX1 = 0, returnX2 = 0;
+    uslong Nloops = 1 + limit/max_add_factor;
+
     bool continuethread = true;
-    std::thread thX1 = std::thread(threadfunct, base_list, num, Nloops, 0, half_size_base\
-                                   , &returnX1, &continuethread, max_add_factor);
-    std::thread thX2 = std::thread(threadfunct, base_list, num, Nloops, half_size_base, size_base\
-                                   , &returnX2, &continuethread, max_add_factor);
-    thX1.join();
-    thX2.join();
-    if(!continuethread){
-        if(returnX1) return returnX1;
-        else if(returnX2) return returnX2;
-    }
+    for(unsigned int i=0; i<number_of_cores; ++i)
+        thX[i] =  new std::thread(threadfunct, base_list, num, Nloops, base_parts_bounds[i], base_parts_bounds[i+1]\
+                                  , &returnX[i], &continuethread, max_add_factor);
+
+    for(unsigned int i=0; i<number_of_cores; ++i)
+        thX[i]->join();
+
+    if(!continuethread)
+        for(unsigned int i=0; i<number_of_cores; ++i)
+            if(returnX[i])
+                return returnX[i];
     return num;
 }
